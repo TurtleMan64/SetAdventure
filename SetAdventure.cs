@@ -32,10 +32,19 @@ public class SetAdventure
 		objForm = new OBJEdit();
 		objForm.Icon = theForm.Icon;
 		
+		viewForm = new ViewForm();
+		viewForm.Icon = theForm.Icon;
+		
 		new Thread(() =>
         {
             Thread.CurrentThread.IsBackground = true;
             objForm.ShowDialog();
+        }).Start();
+		
+		new Thread(() =>
+        {
+            Thread.CurrentThread.IsBackground = true;
+            viewForm.ShowDialog();
         }).Start();
 		
 		theForm.ShowDialog();
@@ -43,6 +52,12 @@ public class SetAdventure
 	
 	//When sorting, what should we sort by
 	public static int organizeType = 0;
+	
+	//How to display parameters
+	public static int dispID = 1;
+	public static int dispRot = 0;
+	public static int dispPos = 2;
+	public static int dispVar = 2;
 	
 	//List of the objects we are working with
 	public static List<SETObject> objList = new List<SETObject>();
@@ -53,6 +68,8 @@ public class SetAdventure
 	public static Label lblObjCount = new Label();
 	
 	public static OBJEdit objForm = null;
+	
+	public static ViewForm viewForm = null;
 	
 	public partial class Display : Form
 	{
@@ -130,9 +147,20 @@ public class SetAdventure
 			
 			
 			
+			// View submenu
+			MenuItem[] menusView = new MenuItem[1];
+			menusView[0] = new MenuItem("Open View Display");
+			
+			menusView[0].Click += eventViewChangeTypeDisplay;
+			
+			MenuItem menuItemView = new MenuItem("&View", menusView);
+			
+			
+			
 			// Add two MenuItem objects to the MainMenu.
 			mainMenu.MenuItems.Add(menuItemFile);
 			mainMenu.MenuItems.Add(menuItemEdit);
+			mainMenu.MenuItems.Add(menuItemView);
 			
 			// Set the selection mode to multiple and extended.
 			lstBox.SelectionMode = SelectionMode.MultiExtended;
@@ -157,7 +185,7 @@ public class SetAdventure
 			
 			this.Text = "";
 			this.Size = new Size(976, 800);
-			this.Location = new System.Drawing.Point(278, 16);
+			this.Location = new System.Drawing.Point(256, 16);
 			this.StartPosition = FormStartPosition.Manual;
 			this.Menu = mainMenu;
 			this.Resize += eventFormResize;
@@ -173,7 +201,15 @@ public class SetAdventure
 		
 		public void eventDoubleClick(object sender, EventArgs e)
 		{
+			viewForm.Hide();
 			objForm.selectNewObject();
+		}
+		
+		public void eventViewChangeTypeDisplay(object sender, EventArgs e)
+		{
+			viewForm.refreshButtons();
+			objForm.Hide();
+			viewForm.Show();
 		}
 		
 		public void eventEditAddBlankObject(object sender, EventArgs e)
@@ -912,6 +948,272 @@ public class SetAdventure
 			
 			lblObjCount.Text = "Object count: "+objList.Count;
 		}
+		
+		//Call whenever the view format changes
+		public static void updateObjectStrings()
+		{
+			foreach (SETObject o in objList)
+			{
+				o.genDisp();
+			}
+			
+			lstBox.DataSource = null;
+			lstBox.DataSource = objList;
+		}
+	}
+	
+	public partial class ViewForm : Form
+	{
+		public static Label lblDec   = new Label();
+		public static Label lblHex   = new Label();
+		public static Label lblFloat = new Label();
+		
+		public static Label lblID  = new Label();
+		public static Label lblRot = new Label();
+		public static Label lblPos = new Label();
+		public static Label lblVar = new Label();
+
+		public static Panel panID = new Panel();
+		public static RadioButton chkID_Dec = new RadioButton();
+		public static RadioButton chkID_Hex = new RadioButton();
+		
+		public static Panel panRot = new Panel();
+		public static RadioButton chkRot_Dec = new RadioButton();
+		public static RadioButton chkRot_Hex = new RadioButton();
+		
+		public static Panel panPos = new Panel();
+		public static RadioButton chkPos_Dec = new RadioButton();
+		public static RadioButton chkPos_Hex = new RadioButton();
+		public static RadioButton chkPos_Float = new RadioButton();
+		
+		public static Panel panVar = new Panel();
+		public static RadioButton chkVar_Dec = new RadioButton();
+		public static RadioButton chkVar_Hex = new RadioButton();
+		public static RadioButton chkVar_Float = new RadioButton();
+		
+		public ViewForm()
+		{
+			this.StartPosition = FormStartPosition.Manual;
+			this.Location = new System.Drawing.Point(16, 416+32);
+			this.Size = new Size(240, 224);
+			this.FormBorderStyle = FormBorderStyle.FixedSingle;
+			this.Text = "View Format";
+			
+			initializeHeaderLabel(lblDec, 76, "Dec");
+			initializeHeaderLabel(lblHex, 124, "Hex");
+			initializeHeaderLabel(lblFloat, 172, "Float");
+			
+			initializeLabel(lblID , 8+28*1, "ID");
+			initializeLabel(lblRot, 8+28*2, "Rotations");
+			initializeLabel(lblPos, 8+28*3, "Positions");
+			initializeLabel(lblVar, 8+28*4, "Variables");
+			
+			int yOff = 1;
+			int xOff = 19;
+			
+			chkID_Dec.Location = new System.Drawing.Point(0, 0);
+			chkID_Hex.Location = new System.Drawing.Point(48, 0);
+			chkID_Dec.Size = new Size(16, 16);
+			chkID_Hex.Size = new Size(16, 16);
+			chkID_Dec.Click += eventClickID_Dec;
+			chkID_Hex.Click += eventClickID_Hex;
+			
+			chkRot_Dec.Location = new System.Drawing.Point(0, 0);
+			chkRot_Hex.Location = new System.Drawing.Point(48, 0);
+			chkRot_Dec.Size = new Size(16, 16);
+			chkRot_Hex.Size = new Size(16, 16);
+			chkRot_Dec.Click += eventClickRot_Dec;
+			chkRot_Hex.Click += eventClickRot_Hex;
+			
+			chkPos_Dec.Location   = new System.Drawing.Point(0, 0);
+			chkPos_Hex.Location   = new System.Drawing.Point(48, 0);
+			chkPos_Float.Location = new System.Drawing.Point(96, 0);
+			chkPos_Dec.Size   = new Size(16, 16);
+			chkPos_Hex.Size   = new Size(16, 16);
+			chkPos_Float.Size = new Size(16, 16);
+			chkPos_Dec.Click += eventClickPos_Dec;
+			chkPos_Hex.Click += eventClickPos_Hex;
+			chkPos_Float.Click += eventClickPos_Float;
+			
+			chkVar_Dec.Location   = new System.Drawing.Point(0, 0);
+			chkVar_Hex.Location   = new System.Drawing.Point(48, 0);
+			chkVar_Float.Location = new System.Drawing.Point(96, 0);
+			chkVar_Dec.Size   = new Size(16, 16);
+			chkVar_Hex.Size   = new Size(16, 16);
+			chkVar_Float.Size = new Size(16, 16);
+			chkVar_Dec.Click += eventClickVar_Dec;
+			chkVar_Hex.Click += eventClickVar_Hex;
+			chkVar_Float.Click += eventClickVar_Float;
+			
+			panID.Size = new Size(128, 20);
+			panID.Location = new System.Drawing.Point(76+xOff, 8+29*1+yOff);
+			panRot.Size = new Size(128, 20);
+			panRot.Location = new System.Drawing.Point(76+xOff, 8+29*2+yOff);
+			panPos.Size = new Size(128, 20);
+			panPos.Location = new System.Drawing.Point(76+xOff, 8+29*3+yOff);
+			panVar.Size = new Size(128, 20);
+			panVar.Location = new System.Drawing.Point(76+xOff, 8+29*4+yOff);
+
+			this.Controls.Add(lblHex);
+			this.Controls.Add(lblDec);
+			this.Controls.Add(lblFloat);
+			
+			this.Controls.Add(lblID);
+			this.Controls.Add(lblRot);
+			this.Controls.Add(lblPos);
+			this.Controls.Add(lblVar);
+			
+			panID.Controls.Add(chkID_Dec);
+			panID.Controls.Add(chkID_Hex);
+			this.Controls.Add(panID);
+			
+			panRot.Controls.Add(chkRot_Dec);
+			panRot.Controls.Add(chkRot_Hex);
+			this.Controls.Add(panRot);
+			
+			panPos.Controls.Add(chkPos_Dec);
+			panPos.Controls.Add(chkPos_Hex);
+			panPos.Controls.Add(chkPos_Float);
+			this.Controls.Add(panPos);
+			
+			panVar.Controls.Add(chkVar_Dec);
+			panVar.Controls.Add(chkVar_Hex);
+			panVar.Controls.Add(chkVar_Float);
+			this.Controls.Add(panVar);
+
+			refreshButtons();
+		}
+		
+		public void initializeHeaderLabel(Label lbl, int left, string txt)
+		{
+			lbl.AutoSize = false;
+			lbl.Size = new Size(48, 16);
+			lbl.Location = new System.Drawing.Point(left, 12);
+			lbl.TextAlign = ContentAlignment.MiddleCenter;
+			lbl.Text = txt;
+		}
+		
+		public void initializeLabel(Label lbl, int top, string txt)
+		{
+			lbl.AutoSize = false;
+			lbl.Size = new Size(128-32-32, 16);
+			lbl.Location = new System.Drawing.Point(4, top+2);
+			lbl.TextAlign = ContentAlignment.MiddleRight;
+			lbl.Text = txt;
+		}
+		
+		public void refreshButtons()
+		{
+			if (dispID == 0)
+			{
+				chkID_Dec.Checked = true;
+			}
+			else
+			{
+				chkID_Hex.Checked = true;
+			}
+			
+			if (dispRot == 0)
+			{
+				chkRot_Dec.Checked = true;
+			}
+			else
+			{
+				chkRot_Hex.Checked = true;
+			}
+			
+			if (dispPos == 0)
+			{
+				chkPos_Dec.Checked = true;
+			}
+			else if (dispPos == 1)
+			{
+				chkPos_Hex.Checked = true;
+			}
+			else
+			{
+				chkPos_Float.Checked = true;
+			}
+			
+			if (dispVar == 0)
+			{
+				chkVar_Dec.Checked = true;
+			}
+			else if (dispVar == 1)
+			{
+				chkVar_Hex.Checked = true;
+			}
+			else
+			{
+				chkVar_Float.Checked = true;
+			}
+		}
+		
+		public void eventClickID_Dec(object sender, EventArgs e)
+		{
+			dispID = 0;
+			Display.updateObjectStrings();
+		}
+		
+		public void eventClickID_Hex(object sender, EventArgs e)
+		{
+			dispID = 1;
+			Display.updateObjectStrings();
+		}
+		
+		public void eventClickRot_Dec(object sender, EventArgs e)
+		{
+			dispRot = 0;
+			Display.updateObjectStrings();
+		}
+		
+		public void eventClickRot_Hex(object sender, EventArgs e)
+		{
+			dispRot = 1;
+			Display.updateObjectStrings();
+		}
+		
+		public void eventClickPos_Dec(object sender, EventArgs e)
+		{
+			dispPos = 0;
+			Display.updateObjectStrings();
+		}
+		
+		public void eventClickPos_Hex(object sender, EventArgs e)
+		{
+			dispPos = 1;
+			Display.updateObjectStrings();
+		}
+		
+		public void eventClickPos_Float(object sender, EventArgs e)
+		{
+			dispPos = 2;
+			Display.updateObjectStrings();
+		}
+		
+		public void eventClickVar_Dec(object sender, EventArgs e)
+		{
+			dispVar = 0;
+			Display.updateObjectStrings();
+		}
+		
+		public void eventClickVar_Hex(object sender, EventArgs e)
+		{
+			dispVar = 1;
+			Display.updateObjectStrings();
+		}
+		
+		public void eventClickVar_Float(object sender, EventArgs e)
+		{
+			dispVar = 2;
+			Display.updateObjectStrings();
+		}
+		
+		protected override void OnFormClosing(FormClosingEventArgs  e)
+		{
+			e.Cancel = true;
+			this.Hide();
+		}
 	}
 	
 	public partial class OBJEdit : Form
@@ -990,13 +1292,13 @@ public class SetAdventure
 			this.Controls.Add(editVar2);
 			this.Controls.Add(editVar3);
 			
-			this.Controls.Add(lblID  );
+			this.Controls.Add(lblID);
 			this.Controls.Add(lblXRot);
 			this.Controls.Add(lblYRot);
 			this.Controls.Add(lblZRot);
-			this.Controls.Add(lblX   );
-			this.Controls.Add(lblY   );
-			this.Controls.Add(lblZ   );
+			this.Controls.Add(lblX);
+			this.Controls.Add(lblY);
+			this.Controls.Add(lblZ);
 			this.Controls.Add(lblVar1);
 			this.Controls.Add(lblVar2);
 			this.Controls.Add(lblVar3);
@@ -1008,16 +1310,68 @@ public class SetAdventure
 			{
 				currObj = (SETObject)lstBox.SelectedItem;
 				
-				editID.Text   = currObj.id.ToString("X");
-				editXRot.Text = ""+currObj.rotX;
-				editYRot.Text = ""+currObj.rotY;
-				editZRot.Text = ""+currObj.rotZ;
-				editX.Text    = ""+currObj.x;
-				editY.Text    = ""+currObj.y; 
-				editZ.Text    = ""+currObj.z;  
-				editVar1.Text = ""+currObj.var1;
-				editVar2.Text = ""+currObj.var2;
-				editVar3.Text = ""+currObj.var3;
+				switch (dispID)
+				{
+					case 0:  editID.Text = ""+currObj.id; break; //Base 10
+					default: editID.Text = currObj.id.ToString("X"); break; //Hex
+				}
+				
+				switch (dispRot)
+				{
+					case 0:  editXRot.Text = ""+currObj.rotX;
+							 editYRot.Text = ""+currObj.rotY;
+							 editZRot.Text = ""+currObj.rotZ; break; //Base 10
+							
+					default: editXRot.Text = currObj.rotX.ToString("X2");
+							 editYRot.Text = currObj.rotY.ToString("X2");
+							 editZRot.Text = currObj.rotZ.ToString("X2"); break; //Hex
+				}
+				
+				byte[] xBytes = BitConverter.GetBytes(currObj.x);
+				byte[] yBytes = BitConverter.GetBytes(currObj.y);
+				byte[] zBytes = BitConverter.GetBytes(currObj.z);
+				
+				uint xInt = (uint)(xBytes[0]+(xBytes[1]<<8)+(xBytes[2]<<16)+(xBytes[3]<<24));
+				uint yInt = (uint)(yBytes[0]+(yBytes[1]<<8)+(yBytes[2]<<16)+(yBytes[3]<<24));
+				uint zInt = (uint)(zBytes[0]+(zBytes[1]<<8)+(zBytes[2]<<16)+(zBytes[3]<<24));
+				
+				switch (dispPos)
+				{
+					case 0:  editX.Text = ""+xInt;
+							 editY.Text = ""+yInt;
+							 editZ.Text = ""+zInt; break; //Base 10
+							
+					case 1:  editX.Text = xInt.ToString("X4");
+							 editY.Text = yInt.ToString("X4");
+							 editZ.Text = zInt.ToString("X4"); break; //Hex
+							 
+					default: editX.Text = ""+currObj.x;
+							 editY.Text = ""+currObj.y;
+							 editZ.Text = ""+currObj.z; break; //Float
+				}
+				
+				byte[] var1Bytes = BitConverter.GetBytes(currObj.var1);
+				byte[] var2Bytes = BitConverter.GetBytes(currObj.var2);
+				byte[] var3Bytes = BitConverter.GetBytes(currObj.var3);
+				
+				uint var1Int = (uint)(var1Bytes[0]+(var1Bytes[1]<<8)+(var1Bytes[2]<<16)+(var1Bytes[3]<<24));
+				uint var2Int = (uint)(var2Bytes[0]+(var2Bytes[1]<<8)+(var2Bytes[2]<<16)+(var2Bytes[3]<<24));
+				uint var3Int = (uint)(var3Bytes[0]+(var3Bytes[1]<<8)+(var3Bytes[2]<<16)+(var3Bytes[3]<<24));
+				
+				switch (dispVar)
+				{
+					case 0:  editVar1.Text = ""+var1Int;
+							 editVar2.Text = ""+var2Int;
+							 editVar3.Text = ""+var3Int; break; //Base 10
+					
+					case 1:  editVar1.Text = ""+var1Int.ToString("X4");
+							 editVar2.Text = ""+var2Int.ToString("X4");
+							 editVar3.Text = ""+var3Int.ToString("X4"); break; //Hex
+					
+					default: editVar1.Text = ""+currObj.var1;
+							 editVar2.Text = ""+currObj.var2;
+							 editVar3.Text = ""+currObj.var3; break; //Float
+				}
 			}
 			
 			this.Show();
@@ -1059,16 +1413,156 @@ public class SetAdventure
 			{
 				try
 				{
-					byte id     = Convert.ToByte(editID.Text, 16);
-					ushort rotX = Convert.ToUInt16(editXRot.Text, 10);
-					ushort rotY = Convert.ToUInt16(editYRot.Text, 10);
-					ushort rotZ = Convert.ToUInt16(editZRot.Text, 10);
-					float x     = Convert.ToSingle(editX.Text);
-					float y     = Convert.ToSingle(editY.Text);
-					float z     = Convert.ToSingle(editZ.Text);
-					float var1  = Convert.ToSingle(editVar1.Text);
-					float var2  = Convert.ToSingle(editVar2.Text);
-					float var3  = Convert.ToSingle(editVar3.Text);
+					byte id;
+					ushort rotX;
+					ushort rotY;
+					ushort rotZ;
+					float x;
+					float y;
+					float z;
+					float var1;
+					float var2;
+					float var3;
+					
+					switch (dispID)
+					{
+						case 0:  id = Convert.ToByte(editID.Text, 10); break; //Base 10
+						
+						default: id = Convert.ToByte(editID.Text, 16); break; //Hex
+					}
+					
+					switch (dispRot)
+					{
+						case 0:  rotX  = Convert.ToUInt16(editXRot.Text, 10);
+								 rotY  = Convert.ToUInt16(editYRot.Text, 10);
+								 rotZ  = Convert.ToUInt16(editZRot.Text, 10); break; //Base 10
+								
+						default: rotX  = Convert.ToUInt16(editXRot.Text, 16);
+								 rotY  = Convert.ToUInt16(editYRot.Text, 16);
+								 rotZ  = Convert.ToUInt16(editZRot.Text, 16); break; //Hex
+					}
+
+					switch (dispPos)
+					{
+						case 0: //Base 10
+						{
+							uint xInt  = Convert.ToUInt32(editX.Text, 10);
+							uint yInt  = Convert.ToUInt32(editY.Text, 10);
+							uint zInt  = Convert.ToUInt32(editZ.Text, 10);
+							
+							byte[] buf = new byte[4];
+							buf[0] = (byte)((xInt>>0)  & 0xFF);
+							buf[1] = (byte)((xInt>>8)  & 0xFF);
+							buf[2] = (byte)((xInt>>16) & 0xFF);
+							buf[3] = (byte)((xInt>>24) & 0xFF);
+							x = BitConverter.ToSingle(buf, 0);
+
+							buf[0] = (byte)((yInt>>0)  & 0xFF);
+							buf[1] = (byte)((yInt>>8)  & 0xFF);
+							buf[2] = (byte)((yInt>>16) & 0xFF);
+							buf[3] = (byte)((yInt>>24) & 0xFF);
+							y = BitConverter.ToSingle(buf, 0);
+
+							buf[0] = (byte)((zInt>>0)  & 0xFF);
+							buf[1] = (byte)((zInt>>8)  & 0xFF);
+							buf[2] = (byte)((zInt>>16) & 0xFF);
+							buf[3] = (byte)((zInt>>24) & 0xFF);
+							z = BitConverter.ToSingle(buf, 0);
+							break;
+						}
+						
+						case 1: //Hex
+						{
+							uint xInt  = Convert.ToUInt32(editX.Text, 16);
+							uint yInt  = Convert.ToUInt32(editY.Text, 16);
+							uint zInt  = Convert.ToUInt32(editZ.Text, 16);
+							
+							byte[] buf = new byte[4];
+							buf[0] = (byte)((xInt>>0)  & 0xFF);
+							buf[1] = (byte)((xInt>>8)  & 0xFF);
+							buf[2] = (byte)((xInt>>16) & 0xFF);
+							buf[3] = (byte)((xInt>>24) & 0xFF);
+							x = BitConverter.ToSingle(buf, 0);
+
+							buf[0] = (byte)((yInt>>0)  & 0xFF);
+							buf[1] = (byte)((yInt>>8)  & 0xFF);
+							buf[2] = (byte)((yInt>>16) & 0xFF);
+							buf[3] = (byte)((yInt>>24) & 0xFF);
+							y = BitConverter.ToSingle(buf, 0);
+
+							buf[0] = (byte)((zInt>>0)  & 0xFF);
+							buf[1] = (byte)((zInt>>8)  & 0xFF);
+							buf[2] = (byte)((zInt>>16) & 0xFF);
+							buf[3] = (byte)((zInt>>24) & 0xFF);
+							z = BitConverter.ToSingle(buf, 0);
+							break;
+						}
+						
+						default: x  = Convert.ToSingle(editX.Text);
+								 y  = Convert.ToSingle(editY.Text);
+								 z  = Convert.ToSingle(editZ.Text); break; //Float
+					}
+					
+					switch (dispVar)
+					{
+						case 0: //Base 10
+						{
+							uint var1Int  = Convert.ToUInt32(editVar1.Text, 10);
+							uint var2Int  = Convert.ToUInt32(editVar2.Text, 10);
+							uint var3Int  = Convert.ToUInt32(editVar3.Text, 10);
+							
+							byte[] buf = new byte[4];
+							buf[0] = (byte)((var1Int>>0)  & 0xFF);
+							buf[1] = (byte)((var1Int>>8)  & 0xFF);
+							buf[2] = (byte)((var1Int>>16) & 0xFF);
+							buf[3] = (byte)((var1Int>>24) & 0xFF);
+							var1 = BitConverter.ToSingle(buf, 0);
+
+							buf[0] = (byte)((var2Int>>0)  & 0xFF);
+							buf[1] = (byte)((var2Int>>8)  & 0xFF);
+							buf[2] = (byte)((var2Int>>16) & 0xFF);
+							buf[3] = (byte)((var2Int>>24) & 0xFF);
+							var2 = BitConverter.ToSingle(buf, 0);
+
+							buf[0] = (byte)((var3Int>>0)  & 0xFF);
+							buf[1] = (byte)((var3Int>>8)  & 0xFF);
+							buf[2] = (byte)((var3Int>>16) & 0xFF);
+							buf[3] = (byte)((var3Int>>24) & 0xFF);
+							var3 = BitConverter.ToSingle(buf, 0);
+							break;
+						}
+						
+						case 1: //Hex
+						{
+							uint var1Int  = Convert.ToUInt32(editVar1.Text, 16);
+							uint var2Int  = Convert.ToUInt32(editVar2.Text, 16);
+							uint var3Int  = Convert.ToUInt32(editVar3.Text, 16);
+							
+							byte[] buf = new byte[4];
+							buf[0] = (byte)((var1Int>>0)  & 0xFF);
+							buf[1] = (byte)((var1Int>>8)  & 0xFF);
+							buf[2] = (byte)((var1Int>>16) & 0xFF);
+							buf[3] = (byte)((var1Int>>24) & 0xFF);
+							var1 = BitConverter.ToSingle(buf, 0);
+
+							buf[0] = (byte)((var2Int>>0)  & 0xFF);
+							buf[1] = (byte)((var2Int>>8)  & 0xFF);
+							buf[2] = (byte)((var2Int>>16) & 0xFF);
+							buf[3] = (byte)((var2Int>>24) & 0xFF);
+							var2 = BitConverter.ToSingle(buf, 0);
+
+							buf[0] = (byte)((var3Int>>0)  & 0xFF);
+							buf[1] = (byte)((var3Int>>8)  & 0xFF);
+							buf[2] = (byte)((var3Int>>16) & 0xFF);
+							buf[3] = (byte)((var3Int>>24) & 0xFF);
+							var3 = BitConverter.ToSingle(buf, 0);
+							break;
+						}
+						
+						default: var1  = Convert.ToSingle(editVar1.Text);
+								 var2  = Convert.ToSingle(editVar2.Text);
+								 var3  = Convert.ToSingle(editVar3.Text); break; //Float
+					}
 					
 					currObj.id = id;
 					currObj.rotX = rotX;
@@ -1120,16 +1614,71 @@ public class SetAdventure
 		
 		public void genDisp()
 		{
-			dispString = fixString(id.ToString("X"), 5)+"  "+
-					     fixString(""+rotX, 8)+
-					     fixString(""+rotY, 8)+
-					     fixString(""+rotZ, 8)+"   "+
-					     fixFloatString(x, 11)+
-					     fixFloatString(y, 11)+
-					     fixFloatString(z, 11)+"    "+
-					     fixFloatString(var1, 11)+
-					     fixFloatString(var2, 11)+
-					     fixFloatString(var3, 11);
+			dispString = "";
+			
+			switch (dispID)
+			{
+				case 0:  dispString+=fixString(""+id, 5)+"  "; break; //Base 10
+				
+				default: dispString+=fixString(id.ToString("X"), 5)+"  "; break; //Hex
+			}
+			
+			switch (dispRot)
+			{
+				case 0:  dispString+=fixString(""+rotX, 8);
+						 dispString+=fixString(""+rotY, 8);
+						 dispString+=fixString(""+rotZ, 8)+"   "; break; //Base 10
+						 
+				default: dispString+=fixString(rotX.ToString("X2"), 8);
+						 dispString+=fixString(rotY.ToString("X2"), 8);
+						 dispString+=fixString(rotZ.ToString("X2"), 8)+"   "; break; //Hex
+			}
+			
+			byte[] xBytes = BitConverter.GetBytes(x);
+			byte[] yBytes = BitConverter.GetBytes(y);
+			byte[] zBytes = BitConverter.GetBytes(z);
+			
+			uint xInt = (uint)(xBytes[0]+(xBytes[1]<<8)+(xBytes[2]<<16)+(xBytes[3]<<24));
+			uint yInt = (uint)(yBytes[0]+(yBytes[1]<<8)+(yBytes[2]<<16)+(yBytes[3]<<24));
+			uint zInt = (uint)(zBytes[0]+(zBytes[1]<<8)+(zBytes[2]<<16)+(zBytes[3]<<24));
+			
+			switch (dispPos)
+			{
+				case 0:  dispString+=fixString(""+xInt, 11);
+						 dispString+=fixString(""+yInt, 11);
+						 dispString+=fixString(""+zInt, 11)+"    "; break; //Base 10
+				
+				case 1:  dispString+=fixString(""+xInt.ToString("X4"), 11);
+						 dispString+=fixString(""+yInt.ToString("X4"), 11);
+						 dispString+=fixString(""+zInt.ToString("X4"), 11)+"    "; break; //Hex
+				
+				default: dispString+=fixFloatString(x, 11);
+						 dispString+=fixFloatString(y, 11);
+						 dispString+=fixFloatString(z, 11)+"    "; break; //Float
+			}
+			
+			byte[] var1Bytes = BitConverter.GetBytes(var1);
+			byte[] var2Bytes = BitConverter.GetBytes(var2);
+			byte[] var3Bytes = BitConverter.GetBytes(var3);
+			
+			uint var1Int = (uint)(var1Bytes[0]+(var1Bytes[1]<<8)+(var1Bytes[2]<<16)+(var1Bytes[3]<<24));
+			uint var2Int = (uint)(var2Bytes[0]+(var2Bytes[1]<<8)+(var2Bytes[2]<<16)+(var2Bytes[3]<<24));
+			uint var3Int = (uint)(var3Bytes[0]+(var3Bytes[1]<<8)+(var3Bytes[2]<<16)+(var3Bytes[3]<<24));
+			
+			switch (dispVar)
+			{
+				case 0:  dispString+=fixString(""+var1Int, 11);
+						 dispString+=fixString(""+var2Int, 11);
+						 dispString+=fixString(""+var3Int, 11); break; //Base 10
+				
+				case 1:  dispString+=fixString(""+var1Int.ToString("X4"), 11);
+						 dispString+=fixString(""+var2Int.ToString("X4"), 11);
+						 dispString+=fixString(""+var3Int.ToString("X4"), 11); break; //Hex
+				
+				default: dispString+=fixFloatString(x, 11);
+						 dispString+=fixFloatString(y, 11);
+						 dispString+=fixFloatString(z, 11); break; //Float
+			}
 		}
 		
 		public override string ToString()
@@ -1151,10 +1700,73 @@ public class SetAdventure
 		
 		public string toFullString()
 		{
-			return (id.ToString("X")+
-				" "+rotX+" "+rotY+" "+rotZ+" "+
-				" "+x+" "+y+" "+z+
-				" "+var1+" "+var2+" "+var3);
+			string disp = "";
+			
+			switch (dispID)
+			{
+				case 0:  disp+=""+id+" "; break; //Base 10
+				
+				default: disp+=id.ToString("X")+" "; break; //Hex
+			}
+			
+			switch (dispRot)
+			{
+				case 0:  disp+=(""+rotX)+" ";
+						 disp+=(""+rotY)+" ";
+						 disp+=(""+rotZ)+" "; break; //Base 10
+						 
+				default: disp+=rotX.ToString("X2")+" ";
+						 disp+=rotY.ToString("X2")+" ";
+						 disp+=rotZ.ToString("X2")+" "; break; //Hex
+			}
+			
+			byte[] xBytes = BitConverter.GetBytes(x);
+			byte[] yBytes = BitConverter.GetBytes(y);
+			byte[] zBytes = BitConverter.GetBytes(z);
+			
+			uint xInt = (uint)(xBytes[0]+(xBytes[1]<<8)+(xBytes[2]<<16)+(xBytes[3]<<24));
+			uint yInt = (uint)(yBytes[0]+(yBytes[1]<<8)+(yBytes[2]<<16)+(yBytes[3]<<24));
+			uint zInt = (uint)(zBytes[0]+(zBytes[1]<<8)+(zBytes[2]<<16)+(zBytes[3]<<24));
+			
+			switch (dispPos)
+			{
+				case 0:  disp+=""+xInt+" ";
+						 disp+=""+yInt+" ";
+						 disp+=""+zInt+" "; break; //Base 10
+				
+				case 1:  disp+=""+xInt.ToString("X4")+" ";
+						 disp+=""+yInt.ToString("X4")+" ";
+						 disp+=""+zInt.ToString("X4")+" "; break; //Hex
+				
+				default: disp+=""+x+" ";
+						 disp+=""+y+" ";
+						 disp+=""+z+" "; break; //Float
+			}
+			
+			byte[] var1Bytes = BitConverter.GetBytes(var1);
+			byte[] var2Bytes = BitConverter.GetBytes(var2);
+			byte[] var3Bytes = BitConverter.GetBytes(var3);
+			
+			uint var1Int = (uint)(var1Bytes[0]+(var1Bytes[1]<<8)+(var1Bytes[2]<<16)+(var1Bytes[3]<<24));
+			uint var2Int = (uint)(var2Bytes[0]+(var2Bytes[1]<<8)+(var2Bytes[2]<<16)+(var2Bytes[3]<<24));
+			uint var3Int = (uint)(var3Bytes[0]+(var3Bytes[1]<<8)+(var3Bytes[2]<<16)+(var3Bytes[3]<<24));
+			
+			switch (dispVar)
+			{
+				case 0:  disp+=""+var1Int+" ";
+						 disp+=""+var2Int+" ";
+						 disp+=""+var3Int+" "; break; //Base 10
+				
+				case 1:  disp+=""+var1Int.ToString("X4")+" ";
+						 disp+=""+var2Int.ToString("X4")+" ";
+						 disp+=""+var3Int.ToString("X4")+" "; break; //Hex
+				
+				default: disp+=""+x+" ";
+						 disp+=""+y+" ";
+						 disp+=""+z; break; //Float
+			}
+			
+			return disp;
 		}
 		
 		public string fixString(string old, int size)
