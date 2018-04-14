@@ -1675,9 +1675,9 @@ public class SetAdventure
 						 dispString+=fixString(""+var2Int.ToString("X4"), 11);
 						 dispString+=fixString(""+var3Int.ToString("X4"), 11); break; //Hex
 				
-				default: dispString+=fixFloatString(x, 11);
-						 dispString+=fixFloatString(y, 11);
-						 dispString+=fixFloatString(z, 11); break; //Float
+				default: dispString+=fixFloatString(var1, 11);
+						 dispString+=fixFloatString(var2, 11);
+						 dispString+=fixFloatString(var3, 11); break; //Float
 			}
 		}
 		
@@ -1761,9 +1761,9 @@ public class SetAdventure
 						 disp+=""+var2Int.ToString("X4")+" ";
 						 disp+=""+var3Int.ToString("X4")+" "; break; //Hex
 				
-				default: disp+=""+x+" ";
-						 disp+=""+y+" ";
-						 disp+=""+z; break; //Float
+				default: disp+=""+var1+" ";
+						 disp+=""+var2+" ";
+						 disp+=""+var3; break; //Float
 			}
 			
 			return disp;
