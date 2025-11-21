@@ -513,27 +513,68 @@ public class SetAdventure
         {
             OpenFileDialog dlg = new OpenFileDialog();
             dlg.ShowHelp = true;
-            dlg.Filter  = "SET files|*.bin";
+            dlg.Filter  = "SET files|*.bin;*.txt;";
             dlg.Title = "Open SET file";
 
             if (dlg.ShowDialog() == DialogResult.OK)
             {
-                string fileName;
-                fileName = dlg.FileName;
-                
+                string fileName = dlg.FileName;
+                string fileType = Path.GetExtension(fileName);
+
                 this.Text = fileName;
-                
-                try
+
+                if (fileType == ".txt")
                 {
-                    objList.Clear();
-                    
-                    byte[] buf = System.IO.File.ReadAllBytes(fileName);
-                    
-                    addObjectsFromRawBytes(buf);
+                    try
+                    {
+                        objList.Clear();
+
+                        string[] objEntries = File.ReadAllLines(fileName);
+
+                        foreach (string objEntry in objEntries)
+                        {
+                            string[] objParams = objEntry.Split(' ');
+
+                            SETObject obj = new SETObject();
+
+                            obj.clip = 0;
+                            obj.id = Convert.ToByte(objParams[0], 16);
+                            obj.rotX = ushort.Parse(objParams[1]);
+                            obj.rotY = ushort.Parse(objParams[2]);
+                            obj.rotZ = ushort.Parse(objParams[3]);
+                            obj.x = float.Parse(objParams[4]);
+                            obj.y = float.Parse(objParams[5]);
+                            obj.z = float.Parse(objParams[6]);
+                            obj.var1 = float.Parse(objParams[7]);
+                            obj.var2 = float.Parse(objParams[8]);
+                            obj.var3 = float.Parse(objParams[9]);
+
+                            obj.genDisp();
+                            objList.Add(obj);
+                        }
+
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Trouble loading file '" + fileName + "'");
+                    }
                 }
-                catch
+                else
                 {
-                    MessageBox.Show("Trouble loading file '"+fileName+"'");
+
+
+                    try
+                    {
+                        objList.Clear();
+
+                        byte[] buf = System.IO.File.ReadAllBytes(fileName);
+
+                        addObjectsFromRawBytes(buf);
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Trouble loading file '" + fileName + "'");
+                    }
                 }
                 
                 updateObjectList();
